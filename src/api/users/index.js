@@ -31,7 +31,7 @@ usersRouter.post(
         const { _id, role } = await newUser.save();
         const payload = { _id, role };
         const accessToken = await createAccessToken(payload);
-        res.send(accessToken);
+        res.send({ accessToken });
       } else {
         next(createHttpError(404, "An user with that email already exists"));
       }

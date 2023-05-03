@@ -5,13 +5,13 @@ const userSchema = {
   firstName: {
     in: ["body"],
     isString: {
-      errorMessage: "Name is mandatory field and needs to be a string!",
+      errorMessage: "Firstname is mandatory field and needs to be a string!",
     },
   },
   lastName: {
     in: ["body"],
     isString: {
-      errorMessage: "Surname is mandatory field and needs to be a string!",
+      errorMessage: "Lastname is mandatory field and needs to be a string!",
     },
   },
   email: {
