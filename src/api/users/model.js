@@ -10,7 +10,8 @@ export const usersSchema = new Schema(
     lastName: { type: String, required: true },
     email: { type: String, required: true },
     password: { type: String, required: false },
-    bio: { type: String },
+    about: { type: String },
+    location: { type: String },
     experiences: [experienceSchema],
     connections: {
       pending: [requestSchema],
