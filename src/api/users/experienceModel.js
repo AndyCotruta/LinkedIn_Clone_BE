@@ -8,7 +8,7 @@ const experiencesSchema = new Schema(
     startDate: { type: String, required: true },
     endDate: { type: String },
     description: { type: String, required: true },
-    area: { type: String, required: true },
+    location: { type: String, required: true },
     image: { type: String, default: "https://via.placeholder.com/250" },
   },
   {

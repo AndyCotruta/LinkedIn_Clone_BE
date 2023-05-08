@@ -41,6 +41,76 @@ usersRouter.put("/me", JWTAuthMiddleware, async (req, res, next) => {
 });
 
 usersRouter.post(
+  "/me/experience",
+  JWTAuthMiddleware,
+  async (req, res, next) => {
+    try {
+      const updatedUser = await UsersModel.findByIdAndUpdate(
+        req.user._id,
+        { $push: { experiences: req.body } },
+        { new: true, runValidators: true }
+      );
+      if (updatedUser) {
+        res.send(updatedUser);
+      } else {
+        next(
+          createHttpError(404, `User with id ${req.user._id} was not found`)
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  }
+);
+
+usersRouter.put(
+  "/me/experience/:index",
+  JWTAuthMiddleware,
+  async (req, res, next) => {
+    try {
+      const index = req.params.index;
+      const user = await UsersModel.findById(req.user._id);
+      console.log(user);
+      user.experiences[index] = {
+        ...user.experiences[index].toObject(),
+        ...req.body,
+      };
+
+      await user.save();
+      res.send(user);
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  }
+);
+
+usersRouter.delete(
+  "/me/experience",
+  JWTAuthMiddleware,
+  async (req, res, next) => {
+    try {
+      const updatedUser = await UsersModel.findByIdAndUpdate(
+        req.user._id,
+        { $pull: { experiences: { createdAt: req.body.createdAt } } },
+        { new: true }
+      );
+      if (updatedUser) {
+        res.send(updatedUser);
+      } else {
+        next(
+          createHttpError(404, `User with id ${req.user._id} was not found`)
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  }
+);
+
+usersRouter.post(
   "/register",
   checkUserSchema,
   triggerBadRequest,
