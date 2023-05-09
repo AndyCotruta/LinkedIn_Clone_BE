@@ -5,6 +5,18 @@ import q2m from "query-to-mongo";
 import { checkUserSchema, triggerBadRequest } from "./validator.js";
 import { createAccessToken } from "../../lib/authTools.js";
 import { JWTAuthMiddleware } from "../../lib/jwtAuth.js";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+
+const cloudinaryUser = multer({
+  storage: new CloudinaryStorage({
+    cloudinary, // cloudinary is going to search in .env vars for smt called process.env.CLOUDINARY_URL
+    params: {
+      folder: "linkedIn/users",
+    },
+  }),
+}).single("userImage");
 
 const usersRouter = express.Router();
 
@@ -19,26 +31,35 @@ usersRouter.get("/me", JWTAuthMiddleware, async (req, res, next) => {
   }
 });
 
-usersRouter.put("/me", JWTAuthMiddleware, async (req, res, next) => {
-  try {
-    const updatedUser = await UsersModel.findByIdAndUpdate(
-      req.user._id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
+usersRouter.put(
+  "/me",
+  JWTAuthMiddleware,
+  cloudinaryUser,
+  async (req, res, next) => {
+    try {
+      console.log(req.file);
+      const url = req.file.path;
+      const updatedUser = await UsersModel.findByIdAndUpdate(
+        req.user._id,
+        { ...req.body, image: url },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+      if (updatedUser) {
+        res.send(updatedUser);
+      } else {
+        next(
+          createHttpError(404, `User with id ${req.user._id} was not found`)
+        );
       }
-    );
-    if (updatedUser) {
-      res.send(updatedUser);
-    } else {
-      next(createHttpError(404, `User with id ${req.user._id} was not found`));
+    } catch (error) {
+      console.log(error);
+      next(error);
     }
-  } catch (error) {
-    console.log(error);
-    next(error);
   }
-});
+);
 
 usersRouter.post(
   "/me/experience",
@@ -71,7 +92,6 @@ usersRouter.put(
     try {
       const index = req.params.index;
       const user = await UsersModel.findById(req.user._id);
-      console.log(user);
       user.experiences[index] = {
         ...user.experiences[index].toObject(),
         ...req.body,

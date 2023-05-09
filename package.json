@@ -22,7 +22,7 @@
   "homepage": "https://github.com/rahimov19/EPICODE_BE_1_BUILD_WEEK#readme",
   "dependencies": {
     "bcrypt": "^5.1.0",
-    "cloudinary": "^1.33.0",
+    "cloudinary": "^1.36.4",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "express-list-endpoints": "^6.0.0",
