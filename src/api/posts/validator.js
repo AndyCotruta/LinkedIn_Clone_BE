@@ -9,12 +9,6 @@ const postSchema = {
       errorMessage: "Text is mandatory field and needs to be a string!",
     },
   },
-  user: {
-    in: ["body"],
-    isString: {
-      errorMessage: "User is mandatory field and needs to be a string!",
-    },
-  },
 };
 
 export const checkpostSchema = checkSchema(postSchema);

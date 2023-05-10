@@ -4,27 +4,38 @@ import PostsModel from "./model.js";
 import UsersModel from "../users/model.js";
 import likeModel from "./likeModel.js";
 import createHttpError from "http-errors";
-
 import { checkpostSchema, triggerPostsBadRequest } from "./validator.js";
+import { JWTAuthMiddleware } from "../../lib/jwtAuth.js";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 const { NotFound } = httpErrors;
+
+const cloudinaryPost = multer({
+  storage: new CloudinaryStorage({
+    cloudinary, // cloudinary is going to search in .env vars for smt called process.env.CLOUDINARY_URL
+    params: {
+      folder: "linkedIn/posts",
+    },
+  }),
+}).single("postImage");
 
 const postsRouter = express.Router();
 
 postsRouter.post(
   "/",
+  JWTAuthMiddleware,
+  cloudinaryPost,
   checkpostSchema,
   triggerPostsBadRequest,
   async (req, res, next) => {
     try {
-      const userId = req.body.user;
+      const userId = req.user._id;
+      const url = req.file.path;
       const user = await UsersModel.findById(userId);
       if (user) {
-        const newPost = new PostsModel({
-          ...req.body,
-          image:
-            "https://img.freepik.com/vektoren-kostenlos/organische-flache-postillustration-mit-leuten_23-2148955260.jpg",
-        });
+        const newPost = new PostsModel({ ...req.body, image: url, user: user });
         const { _id } = await newPost.save();
         res.status(201).send(`Post with id ${_id} created successfully`);
       } else {
@@ -70,18 +81,34 @@ postsRouter.get("/:postId", async (req, res, next) => {
 
 postsRouter.put(
   "/:postId",
-
+  JWTAuthMiddleware,
+  cloudinaryPost,
   async (req, res, next) => {
     try {
+      const user = req.user._id;
       const postId = req.params.postId;
-      const updatedPost = await PostsModel.findByIdAndUpdate(postId, req.body, {
-        new: true,
-        runValidators: true,
-      });
-      if (updatedPost) {
-        res.send(updatedPost);
+      const url = req.file.path;
+      const allowedPost = await PostsModel.findOne({ user: user, _id: postId });
+      console.log(allowedPost);
+      if (allowedPost) {
+        const updatedPost = await PostsModel.findByIdAndUpdate(
+          postId,
+          { ...req.body, image: url },
+          {
+            new: true,
+            runValidators: true,
+          }
+        );
+        if (updatedPost) {
+          res.send(updatedPost);
+        } else {
+          next(NotFound(`Post with id ${postId} not found`));
+        }
       } else {
-        next(NotFound(`Post with id ${postId} not found`));
+        next(
+          403,
+          `You are not allowed to modify a post that doesn't belong to you`
+        );
       }
     } catch (error) {
       console.log(error);
