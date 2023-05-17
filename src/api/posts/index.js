@@ -60,55 +60,67 @@ postsRouter.get("/", async (req, res, next) => {
   }
 });
 
-postsRouter.get("/:postId", async (req, res, next) => {
-  try {
-    const postId = req.params.postId;
-    const post = await PostsModel.findById(postId)
-      .populate({
-        path: "user",
-      })
-      .populate({ path: "comments.user" });
-    if (postId) {
-      res.send(post);
-    } else {
-      next(NotFound(`Post with id ${postId} not found`));
-    }
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-});
-
 postsRouter.put(
   "/:postId",
   JWTAuthMiddleware,
   cloudinaryPost,
   async (req, res, next) => {
     try {
+      console.log(req);
       const user = req.user._id;
       const postId = req.params.postId;
-      const url = req.file.path;
-      const allowedPost = await PostsModel.findOne({ user: user, _id: postId });
-      console.log(allowedPost);
-      if (allowedPost) {
-        const updatedPost = await PostsModel.findByIdAndUpdate(
-          postId,
-          { ...req.body, image: url },
-          {
-            new: true,
-            runValidators: true,
+      console.log(req.file);
+      if (req.file) {
+        const url = req.file.path;
+        const allowedPost = await PostsModel.findOne({
+          user: user,
+          _id: postId,
+        });
+        if (allowedPost) {
+          const updatedPost = await PostsModel.findByIdAndUpdate(
+            postId,
+            { ...req.body, image: url },
+            {
+              new: true,
+              runValidators: true,
+            }
+          );
+          if (updatedPost) {
+            res.send(updatedPost);
+          } else {
+            next(NotFound(`Post with id ${postId} not found`));
           }
-        );
-        if (updatedPost) {
-          res.send(updatedPost);
         } else {
-          next(NotFound(`Post with id ${postId} not found`));
+          next(
+            403,
+            `You are not allowed to modify a post that doesn't belong to you`
+          );
         }
       } else {
-        next(
-          403,
-          `You are not allowed to modify a post that doesn't belong to you`
-        );
+        const allowedPost = await PostsModel.findOne({
+          user: user,
+          _id: postId,
+        });
+        if (allowedPost) {
+          const updatedPost = await PostsModel.findByIdAndUpdate(
+            postId,
+            { ...req.body },
+            {
+              new: true,
+              runValidators: true,
+            }
+          );
+          if (updatedPost) {
+            res.send(updatedPost);
+          } else {
+            next(NotFound(`Post with id ${postId} not found`));
+          }
+        } else {
+          next(
+            403,
+            `You are not allowed to modify a post that doesn't belong to you`
+          );
+        }
       }
     } catch (error) {
       console.log(error);

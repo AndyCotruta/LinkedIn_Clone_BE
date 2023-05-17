@@ -37,6 +37,7 @@ usersRouter.put(
   cloudinaryUser,
   async (req, res, next) => {
     try {
+      console.log(req);
       console.log(req.file);
       const url = req.file.path;
       const updatedUser = await UsersModel.findByIdAndUpdate(
