@@ -66,10 +66,9 @@ postsRouter.put(
   cloudinaryPost,
   async (req, res, next) => {
     try {
-      console.log(req);
       const user = req.user._id;
       const postId = req.params.postId;
-      console.log(req.file);
+
       if (req.file) {
         const url = req.file.path;
         const allowedPost = await PostsModel.findOne({
@@ -129,14 +128,28 @@ postsRouter.put(
   }
 );
 
-postsRouter.delete("/:postId", async (req, res, next) => {
+postsRouter.delete("/:postId", JWTAuthMiddleware, async (req, res, next) => {
   try {
+    const userId = req.user._id;
     const postId = req.params.postId;
-    const deletedPost = await PostsModel.findByIdAndDelete(postId);
-    if (deletedPost) {
-      res.status(204).send();
+    const allowedPost = await PostsModel.findOne({
+      user: userId,
+      _id: postId,
+    });
+    if (allowedPost) {
+      const deletedPost = await PostsModel.findByIdAndDelete(postId);
+      if (deletedPost) {
+        res.status(204).send();
+      } else {
+        next(NotFound(`Post with id ${postId} not found`));
+      }
     } else {
-      next(NotFound(`Post with id ${postId} not found`));
+      next(
+        createHttpError(
+          403,
+          "You are not allowed to delete someone else's post"
+        )
+      );
     }
   } catch (error) {
     console.log(error);
