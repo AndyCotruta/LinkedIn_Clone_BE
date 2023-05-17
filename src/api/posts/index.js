@@ -286,34 +286,38 @@ postsRouter.delete("/:postId/comments/:commentId", async (req, res, next) => {
   }
 });
 // ***********************LIKES**********************
-postsRouter.put("/:postId/likes", async (req, res, next) => {
+postsRouter.put("/:postId/likes", JWTAuthMiddleware, async (req, res, next) => {
   try {
     const post = await PostsModel.findById(req.params.postId);
-
+    const user = req.user._id;
     if (post) {
       const index = post.likes.findIndex(
-        (userId) => userId.userId.toString() === req.body.userId
+        (userId) => userId.userId.toString() === user
       );
       if (index !== -1) {
         const post = await PostsModel.findByIdAndUpdate(
           req.params.postId,
           {
-            $pull: { likes: { userId: req.body.userId } },
+            $pull: { likes: { userId: user } },
           },
           { new: true, runValidators: true }
         );
-
-        res.send(post);
+        const postToSend = await PostsModel.findById(req.params.postId)
+          .populate("user")
+          .populate({ path: "comments.user" });
+        res.send(postToSend);
       } else {
         const post = await PostsModel.findByIdAndUpdate(
           req.params.postId,
           {
-            $push: { likes: { userId: req.body.userId } },
+            $push: { likes: { userId: user } },
           },
           { new: true, runValidators: true }
         );
-
-        res.send(post);
+        const postToSend = await PostsModel.findById(req.params.postId)
+          .populate("user")
+          .populate({ path: "comments.user" });
+        res.send(postToSend);
       }
     } else {
       next(
