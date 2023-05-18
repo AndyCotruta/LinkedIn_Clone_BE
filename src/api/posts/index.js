@@ -163,6 +163,7 @@ postsRouter.post(
   JWTAuthMiddleware,
   async (req, res, next) => {
     try {
+      console.log(req.body);
       const user = req.user._id;
 
       const commentToInsert = {
@@ -177,7 +178,10 @@ postsRouter.post(
       );
 
       if (updatedPost) {
-        res.send(updatedPost);
+        const postToSend = await PostsModel.findById(req.params.postId)
+          .populate("user")
+          .populate({ path: "comments.user" });
+        res.send(postToSend);
       } else {
         next(
           createHttpError(404, `Post with id ${req.params.postId} not found!`)
