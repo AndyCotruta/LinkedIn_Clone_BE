@@ -158,19 +158,21 @@ postsRouter.delete("/:postId", JWTAuthMiddleware, async (req, res, next) => {
 });
 
 // ********************************** EMBEDDING**************************
-postsRouter.post("/:postId/comments", async (req, res, next) => {
-  try {
-    const currentComment = req.body;
+postsRouter.post(
+  "/:postId/comments",
+  JWTAuthMiddleware,
+  async (req, res, next) => {
+    try {
+      const user = req.user._id;
 
-    if (currentComment) {
-      const postToInsert = {
+      const commentToInsert = {
         ...req.body,
-        commentDate: new Date(),
+        user,
       };
 
       const updatedPost = await PostsModel.findByIdAndUpdate(
         req.params.postId,
-        { $push: { comments: postToInsert } },
+        { $push: { comments: commentToInsert } },
         { new: true, runValidators: true }
       );
 
@@ -181,13 +183,11 @@ postsRouter.post("/:postId/comments", async (req, res, next) => {
           createHttpError(404, `Post with id ${req.params.postId} not found!`)
         );
       }
-    } else {
-      next(createHttpError(404, `Post with id ${req.body.postId} not found!`));
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 postsRouter.get("/:postId/comments", async (req, res, next) => {
   try {
