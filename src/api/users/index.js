@@ -37,21 +37,39 @@ usersRouter.put(
   cloudinaryUser,
   async (req, res, next) => {
     try {
-      const url = req.file.path;
-      const updatedUser = await UsersModel.findByIdAndUpdate(
-        req.user._id,
-        { ...req.body, image: url },
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-      if (updatedUser) {
-        res.send(updatedUser);
-      } else {
-        next(
-          createHttpError(404, `User with id ${req.user._id} was not found`)
+      if (req.file) {
+        const url = req.file.path;
+        const updatedUser = await UsersModel.findByIdAndUpdate(
+          req.user._id,
+          { ...req.body, image: url },
+          {
+            new: true,
+            runValidators: true,
+          }
         );
+        if (updatedUser) {
+          res.send(updatedUser);
+        } else {
+          next(
+            createHttpError(404, `User with id ${req.user._id} was not found`)
+          );
+        }
+      } else {
+        const updatedUser = await UsersModel.findByIdAndUpdate(
+          req.user._id,
+          req.body,
+          {
+            new: true,
+            runValidators: true,
+          }
+        );
+        if (updatedUser) {
+          res.send(updatedUser);
+        } else {
+          next(
+            createHttpError(404, `User with id ${req.user._id} was not found`)
+          );
+        }
       }
     } catch (error) {
       console.log(error);
